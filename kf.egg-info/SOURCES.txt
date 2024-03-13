@@ -1,3 +1,5 @@
+MANIFEST.in
+requirements.txt
 setup.py
 kf/__init__.py
 kf/kf.py

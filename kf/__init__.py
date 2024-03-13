@@ -1,1 +1,1 @@
-from kf.main import *
+from file24_kf.kf.kf import *
