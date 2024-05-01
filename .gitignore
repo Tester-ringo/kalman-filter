@@ -2,3 +2,5 @@
 
 testgame.egg-info/
 dist/
+
+**/__pycache__

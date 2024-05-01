@@ -1,7 +1,7 @@
 #簡易的なカルマンフィルタのフィルタリング例
 #カルマンフィルタの信頼区間を求めたいと思ったが、よくわからなかった。
 
-from kf import kf
+from file24_kf.kf import core
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -44,7 +44,7 @@ rcParams['font.sans-serif'] = [
 #
 
 #カルマンフィルタの初期設定
-skf = kf.KalmanFilter_SingleObservation()
+skf = core.KalmanFilter_SingleObservation()
 skf.transition_matrix_or_function = np.array([[1, 0.01],[0, 1]]) #A
 skf.noise_model_matrix = np.array([1, 1]) #B
 skf.observation_matrix_or_function = np.array([1,0]) #C
