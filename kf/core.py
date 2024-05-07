@@ -461,6 +461,7 @@ class ExtendedKalmanFilter_MultipleObservation(object):
     r  = FlaggedAttributeDescriptor(flag_name="is_updated")
     x  = FlaggedAttributeDescriptor(flag_name="is_updated")
     p  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    dx = 1e-4
     g : ...
     transition_function = TypeCheckSwapDescriptor(
         types=(Callable,), storage_attribute_name="f")
@@ -687,7 +688,7 @@ class UnscentedKalmanFilter_MultipleObservation(object):
         self.is_updated = False
     def __init__(self) -> None:
         self.k = 0
-    def update(self, observed_value: SCALAR, 
+    def update(self, observed_value: ARRAY_M, 
                input_vector: Any = None) -> None:
         if self.is_updated:
             self._validate_var_error()
