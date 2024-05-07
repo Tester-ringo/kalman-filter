@@ -513,7 +513,7 @@ class ExtendedKalmanFilter_MultipleObservation(object):
         if not self.p.shape == (n, n):
             raise
         self.is_updated = False
-    def update(self, observed_value: SCALAR, 
+    def update(self, observed_value: ARRAY_M, 
                input_vector: Any = None) -> None:
         if self.is_updated:
             self._validate_var_error()
@@ -526,7 +526,7 @@ class ExtendedKalmanFilter_MultipleObservation(object):
             h_jacobian = jacobian(f=self.h, x=self.x.reshape(-1), dx=self.dx)
         else:
             h_jacobian = self.dh(self.x.reshape(-1))
-        result = ekf_update_single(
+        result = ekf_update_multiple(
             x = self.x,
             p = self.p,
             f = self.f,
