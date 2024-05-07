@@ -40,14 +40,14 @@ def update_single(
         u: ARRAY_N_1,
         ) -> Result_Single:
     """更新"""
-    #予測
+    #予測ステップ
     x_    = a@x + u
     p_    = a@p@a.T+q*b@b.T
 
-    #カルマンゲイン
+    #カルマンゲインを計算
     g     = (p_@c.T)/(c@p_@c.T+r)
 
-    #修正（フィルタリング）
+    #修正ステップ（フィルタリング）
     x_new = x_+g@(y-c@x_)
     p_new = (np.eye(len(x))-g@c)@p_
 
@@ -66,14 +66,14 @@ def update_multiple(
         u: ARRAY_N_1,
         ) -> Result_Multiple:
     """更新"""
-    #予測
+    #予測ステップ
     x_    = a@x + u
     p_    = a@p@a.T+b@q@b.T
     
-    #カルマンゲイン
+    #カルマンゲインを計算
     g     = p_@c.T@np.linalg.solve(c@p_@c.T+r, np.eye(r.shape[0]))
     
-    #修正（フィルタリング）
+    #修正ステップ（フィルタリング）
     x_new = x_+g@(y-c@x_)
     p_new = (np.eye(len(x))-g@c)@p_
     

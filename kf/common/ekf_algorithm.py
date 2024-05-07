@@ -13,6 +13,7 @@ from kf.dtypes import *
 __all__ = [
     "update_single", 
     "update_multiple",
+    "jacobian",
     ]
 
 
@@ -28,28 +29,38 @@ class Result_Multiple(NamedTuple):
     g: ARRAY_N_M
 
 
+def jacobian(f:Callable, x:np.ndarray, dx:float=1e-4) -> np.ndarray:
+    n = len(x)
+    dx_offset = np.eye(n)*dx
+    g = lambda x: np.asarray(list(map(f, x)))
+    result = (g(x+dx_offset)-g(x-dx_offset))/2/dx
+    return result.T
+
+
 def update_single(
         x: ARRAY_N_1, 
         p: ARRAY_N_N, 
-        f: ARRAY_N_N, 
-        h: ARRAY_1_N, 
+        f: FUNC_VECTOR_N_I_TO_N, 
+        df: ARRAY_N_N,
+        h: FUNC_VECTOR_N_TO_M, 
+        dh: ARRAY_M_N,
         b: ARRAY_N_1,
         q: SCALAR, 
         r: SCALAR, 
         y: SCALAR,
-        u: ARRAY_N_1,
+        u: Any,
         ) -> Result_Single:
     """更新"""
     #予測
-    x_    = f(x, u)
-    p_    = a@p@a.T+q*b@b.T
+    x_    = f(x.reshape(-1), u).reshape(-1, 1)
+    p_    = df@p@df.T+q*b@b.T
 
     #カルマンゲイン
-    g     = (p_@c.T)/(c@p_@c.T+r)
+    g     = (p_@dh.T)/(dh@p_@dh.T+r)
 
     #修正（フィルタリング）
-    x_new = x_+g@(y-c@x_)
-    p_new = (np.eye(len(x))-g@c)@p_
+    x_new = x_+g@(y-dh@x_)
+    p_new = (np.eye(len(x))-g@dh)@p_
 
     return Result_Single(x_new, p_new, g)
 
@@ -57,24 +68,26 @@ def update_single(
 def update_multiple(
         x: ARRAY_N_1, 
         p: ARRAY_N_N, 
-        f: ARRAY_N_N, 
-        h: ARRAY_M_N, 
+        f: FUNC_VECTOR_N_I_TO_N, 
+        df: ARRAY_N_N,
+        h: FUNC_VECTOR_N_TO_M, 
+        dh: ARRAY_M_N,
         b: ARRAY_N_V,
         q: ARRAY_V_V, 
         r: ARRAY_M_M, 
         y: ARRAY_M_1,
-        u: ARRAY_N_1,
+        u: Any,
         ) -> Result_Multiple:
     """更新"""
     #予測
-    x_    = f(x, u)
-    p_    = a@p@a.T+b@q@b.T
+    x_    = f(x.reshape(-1), u).reshape(-1, 1)
+    p_    = df@p@df.T+b@q@b.T
     
-    #カルマンゲイン
-    g     = p_@c.T@np.linalg.solve(c@p_@c.T+r, np.eye(r.shape[0]))
+    #カルマンゲインを計算
+    g     = p_@dh.T@np.linalg.solve(dh@p_@dh.T+r, np.eye(r.shape[0]))
     
-    #修正（フィルタリング）
-    x_new = x_+g@(y-c@x_)
-    p_new = (np.eye(len(x))-g@c)@p_
+    #修正ステップ（フィルタリング）
+    x_new = x_+g@(y-dh@x_)
+    p_new = (np.eye(len(x))-g@dh)@p_
     
     return Result_Multiple(x_new, p_new, g)

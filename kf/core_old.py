@@ -12,8 +12,8 @@ from dataclasses import dataclass
 from collections import namedtuple
 from kf.dtypes import *
 
-from kf.common.kf import update_single as kf_update_single
-from kf.common.kf import update_multiple as kf_update_multiple
+from kf.common.kf_algorithm import update_single as kf_update_single
+from kf.common.kf_algorithm import update_multiple as kf_update_multiple
 
 __all__ = [
     "LowPassFilter",

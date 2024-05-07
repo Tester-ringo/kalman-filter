@@ -17,9 +17,23 @@ from dataclasses import dataclass
 from collections import namedtuple, abc
 from kf.dtypes import *
 
-from kf.common.kf import update_single as kf_update_single
-from kf.common.kf import update_multiple as kf_update_multiple
+from kf.common.kf_algorithm import update_single as kf_update_single
+from kf.common.kf_algorithm import update_multiple as kf_update_multiple
+from kf.common.ekf_algorithm import update_single as ekf_update_single
+from kf.common.ekf_algorithm import update_multiple as ekf_update_multiple
+from kf.common.ukf_algorithm import update_single as ukf_update_single
+from kf.common.ukf_algorithm import update_multiple as ukf_update_multiple
+from kf.common.ekf_algorithm import jacobian
 
+
+__all__ = [
+    "KalmanFilter_SingleObservation",
+    "KalmanFilter_MultipleObservation",
+    "ExtendedKalmanFilter_SingleObservation",
+    "ExtendedKalmanFilter_MultipleObservation",
+    "UnscentedKalmanFilter_SingleObservation",
+    "UnscentedKalmanFilter_MultipleObservation",
+]
 
 class FlaggedAttributeDescriptor(object):
     def __set_name__(self, owner, name: str) -> None:
@@ -189,7 +203,7 @@ class KalmanFilter_SingleObservation(object):
         types=(int, float, complex), storage_attribute_name="q")
     observation_covariance_number = TypeCheckSwapDescriptor(
         types=(int, float, complex), storage_attribute_name="r")
-    prediction_state = ArrayReshapeSwapDescriptor(
+    prediction_state_vector = ArrayReshapeSwapDescriptor(
         input_size=(-1, 1), output_size=(-1,), storage_attribute_name="x")
     prediction_covariance_matrix = TypeCheckSwapDescriptor(
         types=np.ndarray, storage_attribute_name="p")
@@ -200,7 +214,7 @@ class KalmanFilter_SingleObservation(object):
         "b": "noise_model_matrix",
         "q": "system_noise_covariance_number",
         "r": "observation_covariance_number",
-        "x": "prediction_state",
+        "x": "prediction_state_vector",
         "p": "prediction_covariance_matrix",}
     def _validate_var_error(self) -> None:
         #あまり良いとは言えない実装だけれど許してください。
@@ -220,19 +234,24 @@ class KalmanFilter_SingleObservation(object):
             raise
         if not self.b.shape == (n, v): #ノイズ源を一つしか想定していない問題
             raise
+        if not self.x.shape == (n, 1):
+            raise
+        if not self.p.shape == (n, n):
+            raise
         self.is_updated = False
     def update(self, observed_value: SCALAR, 
-               input_value: ARRAY_I|SCALAR|None = None) -> None:
-        self._validate_var_error()
+               input_vector: ARRAY_I|None = None) -> None:
+        if self.is_updated:
+            self._validate_var_error()
         n = len(self.x)
-        if input_value == None:
+        if input_vector == None:
             input_vector = np.zeros((n, 1))
-        elif isinstance(input_value, np.ndarray):
-            input_vector = np.reshape(input_value, (-1, 1))
+        elif isinstance(input_vector, np.ndarray):
+            input_vector = np.reshape(input_vector, (-1, 1))
         else:
             #数値、もしくはよくわからないものが入ってきた場合。
             #警告やエラーを出したいけれど、この部分は後々実装することとする。
-            input_vector = input_value
+            input_vector = input_vector
         result = kf_update_single(
             x = self.x, 
             p = self.p, 
@@ -242,10 +261,450 @@ class KalmanFilter_SingleObservation(object):
             q = self.q, 
             r = self.r, 
             y = observed_value, 
-            u = input_vector) 
+            u = input_vector)  
         #↑ここどうしよう。array型のアノテーションの方法を変えたほうが良いのか
         self.p = result.p
         self.x = result.x
         self.g = result.g
         self.is_updated = False
+
+
+class KalmanFilter_MultipleObservation(object): 
+    is_updated = False
+    f = FlaggedAttributeDescriptor(flag_name="is_updated")
+    h = FlaggedAttributeDescriptor(flag_name="is_updated")
+    b = FlaggedAttributeDescriptor(flag_name="is_updated")
+    q = FlaggedAttributeDescriptor(flag_name="is_updated")
+    r = FlaggedAttributeDescriptor(flag_name="is_updated")
+    x = FlaggedAttributeDescriptor(flag_name="is_updated")
+    p = FlaggedAttributeDescriptor(flag_name="is_updated")
+    g : ...
+    transition_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="f")
+    observation_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="h")
+    noise_model_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="b")
+    system_noise_covariance_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="q")
+    observation_covariance_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="r")
+    prediction_state_vector = ArrayReshapeSwapDescriptor(
+        input_size=(-1, 1), output_size=(-1,), storage_attribute_name="x")
+    prediction_covariance_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="p")
+    kalman_gain = ReadOnlyDescriptor(reading_attribute_name="g")
+    _precheck_data: dict = {
+        "f": "transition_matrix",
+        "h": "observation_matrix",
+        "b": "noise_model_matrix",
+        "q": "system_noise_covariance_matrix",
+        "r": "observation_covariance_matrix",
+        "x": "prediction_state_vector",
+        "p": "prediction_covariance_matrix",}
+    def _validate_var_error(self) -> None:
+        #あまり良いとは言えない実装だけれど許してください。
+        #必要なアトリビュート。もといパラメータがセットされているかを確認
+        for internal_var, interface_var in self._precheck_data.items():
+            if not hasattr(self, internal_var):
+                raise AttributeError(
+                    f"必要なデータ:{interface_var}が存在しません。"\
+                    "値を代入してください")
+        #array sizeが正しい否かを確認
+        n = len(self.x) #状態変数の要素数
+        m, _ = self.h.shape #観測ベクトルの次元
+        _, v = self.b.shape #ノイズ源の数
+        if not self.f.shape == (n, n):
+            raise #大したものはかけないが、後々エラー文を書く。
+        if not self.h.shape == (m, n):
+            raise
+        if not self.b.shape == (n, v): #ノイズ源を一つしか想定していない問題
+            raise
+        if not self.q.shape == (v, v):
+            raise
+        if not self.r.shape == (m, m):
+            raise
+        if not self.x.shape == (n, 1):
+            raise
+        if not self.p.shape == (n, n):
+            raise
+        self.is_updated = False
+    def update(self, observed_vector: ARRAY_M, 
+               input_vector: ARRAY_I|None = None) -> None:
+        if self.is_updated:
+            self._validate_var_error()
+        n = len(self.x)
+        if input_vector == None:
+            input_vector = np.zeros((n, 1))
+        elif isinstance(input_vector, np.ndarray):
+            input_vector = np.reshape(input_vector, (-1, 1))
+        else:
+            #数値、もしくはよくわからないものが入ってきた場合。
+            #警告やエラーを出したいけれど、この部分は後々実装することとする。
+            input_vector = input_vector
+        result = kf_update_multiple(
+            x = self.x, 
+            p = self.p, 
+            a = self.f, 
+            c = self.h, 
+            b = self.b, 
+            q = self.q, 
+            r = self.r, 
+            y = observed_vector, 
+            u = input_vector)  
+        self.p = result.p
+        self.x = result.x
+        self.g = result.g
+        self.is_updated = False
+
+
+class ExtendedKalmanFilter_SingleObservation(object): 
+    is_updated = False
+    f  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    df = FlaggedAttributeDescriptor(flag_name="is_updated")
+    h  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    dh = FlaggedAttributeDescriptor(flag_name="is_updated")
+    b  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    q  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    r  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    x  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    p  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    dx = 1e-4
+    g : ...
+    _g = ArrayReshapeSwapDescriptor(
+        input_size=(), output_size=(-1,), storage_attribute_name="g")
+    transition_function = TypeCheckSwapDescriptor(
+        types=(Callable,), storage_attribute_name="f")
+    transition_jacobian = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="df")
+    observation_function = TypeCheckSwapDescriptor(
+        types=(Callable,), storage_attribute_name="h")
+    observation_jacobian = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="dh")
+    noise_model_matrix = ArrayReshapeSwapDescriptor(
+        input_size=(-1, 1), output_size=(-1,), storage_attribute_name="b")
+    system_noise_covariance_number = TypeCheckSwapDescriptor(
+        types=(int, float, complex), storage_attribute_name="q")
+    observation_covariance_number = TypeCheckSwapDescriptor(
+        types=(int, float, complex), storage_attribute_name="r")
+    prediction_state_vector = ArrayReshapeSwapDescriptor(
+        input_size=(-1, 1), output_size=(-1,), storage_attribute_name="x")
+    prediction_covariance_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="p")
+    kalman_gain = ReadOnlyDescriptor(reading_attribute_name="_g")
+    _precheck_data: dict = {
+        "f": "transition_function",
+        "h": "observation_function",
+        "b": "noise_model_matrix",
+        "q": "system_noise_covariance_number",
+        "r": "observation_covariance_number",
+        "x": "prediction_state_vector",
+        "p": "prediction_covariance_matrix",}
+    def _validate_var_error(self) -> None:
+        #あまり良いとは言えない実装だけれど許してください。
+        #必要なアトリビュート。もといパラメータがセットされているかを確認
+        for internal_var, interface_var in self._precheck_data.items():
+            if not hasattr(self, internal_var):
+                raise AttributeError(
+                    f"必要なデータ:{interface_var}が存在しません。"\
+                    "値を代入してください")
+        #array sizeが正しい否かを確認
+        n = len(self.x) #状態変数の要素数
+        m = 1
+        v = 1
+        if not self.b.shape == (n, v):
+            raise
+        if not self.x.shape == (n, 1):
+            raise
+        if not self.p.shape == (n, n):
+            raise
+        self.is_updated = False
+    def update(self, observed_value: SCALAR, 
+               input_vector: Any = None) -> None:
+        if self.is_updated:
+            self._validate_var_error()
+        if not (hasattr(self, "df") and isinstance(self.df, Callable)):
+            _f = lambda x: self.f(x, input_vector)
+            f_jacobian = jacobian(f=_f, x=self.x.reshape(-1), dx=self.dx,)
+        else:
+            f_jacobian = self.df(self.x.reshape(-1))
+        if not (hasattr(self, "dh") and isinstance(self.dh, Callable)):
+            h_jacobian = jacobian(f=self.h, x=self.x.reshape(-1), dx=self.dx)
+        else:
+            h_jacobian = self.dh(self.x.reshape(-1))
+        result = ekf_update_single(
+            x = self.x,
+            p = self.p,
+            f = self.f,
+            df = f_jacobian,
+            h = self.h,
+            dh = h_jacobian,
+            b = self.b,
+            q = self.q,
+            r = self.r,
+            y = observed_value,
+            u = input_vector,)  
+        self.p = result.p
+        self.x = result.x
+        self.g = result.g
+        self.is_updated = False
+
+
+class ExtendedKalmanFilter_MultipleObservation(object): 
+    is_updated = False
+    f  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    df = FlaggedAttributeDescriptor(flag_name="is_updated")
+    h  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    dh = FlaggedAttributeDescriptor(flag_name="is_updated")
+    b  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    q  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    r  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    x  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    p  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    g : ...
+    transition_function = TypeCheckSwapDescriptor(
+        types=(Callable,), storage_attribute_name="f")
+    transition_jacobian = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="df")
+    observation_function = TypeCheckSwapDescriptor(
+        types=(Callable,), storage_attribute_name="h")
+    observation_jacobian = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="dh")
+    noise_model_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="b")
+    system_noise_covariance_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="q")
+    observation_covariance_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="r")
+    prediction_state_vector = ArrayReshapeSwapDescriptor(
+        input_size=(-1, 1), output_size=(-1,), storage_attribute_name="x")
+    prediction_covariance_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="p")
+    kalman_gain = ReadOnlyDescriptor(reading_attribute_name="g")
+    _precheck_data: dict = {
+        "f": "transition_function",
+        "h": "observation_function",
+        "b": "noise_model_matrix",
+        "q": "system_noise_covariance_matrix",
+        "r": "observation_covariance_matrix",
+        "x": "prediction_state_vector",
+        "p": "prediction_covariance_matrix",}
+    def _validate_var_error(self) -> None:
+        #あまり良いとは言えない実装だけれど許してください。
+        #必要なアトリビュート。もといパラメータがセットされているかを確認
+        for internal_var, interface_var in self._precheck_data.items():
+            if not hasattr(self, internal_var):
+                raise AttributeError(
+                    f"必要なデータ:{interface_var}が存在しません。"\
+                    "値を代入してください")
+        #array sizeが正しい否かを確認
+        n = len(self.x) #状態変数の要素数
+        m = len(self.h(np.ones(n)))
+        _, v = self.b.shape
+        if not self.b.shape == (n, v):
+            raise
+        if not self.q.shape == (v, v):
+            raise
+        if not self.r.shape == (m, m):
+            raise
+        if not self.x.shape == (n, 1):
+            raise
+        if not self.p.shape == (n, n):
+            raise
+        self.is_updated = False
+    def update(self, observed_value: SCALAR, 
+               input_vector: Any = None) -> None:
+        if self.is_updated:
+            self._validate_var_error()
+        if not (hasattr(self, "df") and isinstance(self.df, Callable)):
+            _f = lambda x: self.f(x, input_vector)
+            f_jacobian = jacobian(f=_f, x=self.x.reshape(-1), dx=self.dx,)
+        else:
+            f_jacobian = self.df(self.x.reshape(-1))
+        if not (hasattr(self, "dh") and isinstance(self.dh, Callable)):
+            h_jacobian = jacobian(f=self.h, x=self.x.reshape(-1), dx=self.dx)
+        else:
+            h_jacobian = self.dh(self.x.reshape(-1))
+        result = ekf_update_single(
+            x = self.x,
+            p = self.p,
+            f = self.f,
+            df = f_jacobian,
+            h = self.h,
+            dh = h_jacobian,
+            b = self.b,
+            q = self.q,
+            r = self.r,
+            y = observed_value,
+            u = input_vector,)  
+        self.p = result.p
+        self.x = result.x
+        self.g = result.g
+        self.is_updated = False
+
+
+class UnscentedKalmanFilter_SingleObservation(object): 
+    is_updated = False
+    f  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    h  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    b  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    q  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    r  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    k  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    x  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    p  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    g : ...
+    _g = ArrayReshapeSwapDescriptor(
+        input_size=(), output_size=(-1,), storage_attribute_name="g")
+    transition_function = TypeCheckSwapDescriptor(
+        types=(Callable,), storage_attribute_name="f")
+    observation_function = TypeCheckSwapDescriptor(
+        types=(Callable,), storage_attribute_name="h")
+    noise_model_matrix = ArrayReshapeSwapDescriptor(
+        input_size=(-1, 1), output_size=(-1,), storage_attribute_name="b")
+    system_noise_covariance_number = TypeCheckSwapDescriptor(
+        types=(int, float, complex), storage_attribute_name="q")
+    observation_covariance_number = TypeCheckSwapDescriptor(
+        types=(int, float, complex), storage_attribute_name="r")
+    scaling_number = TypeCheckSwapDescriptor(
+        types=(int, float, complex), storage_attribute_name="k")
+    prediction_state_vector = ArrayReshapeSwapDescriptor(
+        input_size=(-1, 1), output_size=(-1,), storage_attribute_name="x")
+    prediction_covariance_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="p")
+    kalman_gain = ReadOnlyDescriptor(reading_attribute_name="_g")
+    _precheck_data: dict = {
+        "f": "transition_function",
+        "h": "observation_function",
+        "b": "noise_model_matrix",
+        "q": "system_noise_covariance_number",
+        "r": "observation_covariance_number",
+        "k": "scaling_number",
+        "x": "prediction_state_vector",
+        "p": "prediction_covariance_matrix",}
+    def _validate_var_error(self) -> None:
+        #あまり良いとは言えない実装だけれど許してください。
+        #必要なアトリビュート。もといパラメータがセットされているかを確認
+        for internal_var, interface_var in self._precheck_data.items():
+            if not hasattr(self, internal_var):
+                raise AttributeError(
+                    f"必要なデータ:{interface_var}が存在しません。"\
+                    "値を代入してください")
+        #array sizeが正しい否かを確認
+        n = len(self.x) #状態変数の要素数
+        m = 1
+        v = 1
+        #推移関数と観測関数は今は考えない
+        if not self.b.shape == (n, v):
+            raise
+        if not self.x.shape == (n, 1):
+            raise
+        if not self.p.shape == (n, n):
+            raise
+        self.is_updated = False
+    def __init__(self) -> None:
+        self.k = 0
+    def update(self, observed_value: SCALAR, 
+               input_vector: Any = None) -> None:
+        if self.is_updated:
+            self._validate_var_error()
+        result = ukf_update_single(
+            x = self.x,
+            p = self.p,
+            f = self.f,
+            h = self.h,
+            b = self.b,
+            q = self.q,
+            r = self.r,
+            k = self.k,
+            y = observed_value,
+            u = input_vector)  
+        self.p = result.p
+        self.x = result.x
+        self.g = result.g
+        self.is_updated = False
+
+
+class UnscentedKalmanFilter_MultipleObservation(object): 
+    is_updated = False
+    f  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    h  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    b  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    q  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    r  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    k  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    x  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    p  = FlaggedAttributeDescriptor(flag_name="is_updated")
+    g : ...
+    transition_function = TypeCheckSwapDescriptor(
+        types=(Callable,), storage_attribute_name="f")
+    observation_function = TypeCheckSwapDescriptor(
+        types=(Callable,), storage_attribute_name="h")
+    noise_model_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="b")
+    system_noise_covariance_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="q")
+    observation_covariance_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="r")
+    scaling_number = TypeCheckSwapDescriptor(
+        types=(int, float, complex), storage_attribute_name="k")
+    prediction_state_vector = ArrayReshapeSwapDescriptor(
+        input_size=(-1, 1), output_size=(-1,), storage_attribute_name="x")
+    prediction_covariance_matrix = TypeCheckSwapDescriptor(
+        types=np.ndarray, storage_attribute_name="p")
+    kalman_gain = ReadOnlyDescriptor(reading_attribute_name="g")
+    _precheck_data: dict = {
+        "f": "transition_function",
+        "h": "observation_function",
+        "b": "noise_model_matrix",
+        "q": "system_noise_covariance_matrix",
+        "r": "observation_covariance_matrix",
+        "k": "scaling_number",
+        "x": "prediction_state_vector",
+        "p": "prediction_covariance_matrix",}
+    def _validate_var_error(self) -> None:
+        #あまり良いとは言えない実装だけれど許してください。
+        #必要なアトリビュート。もといパラメータがセットされているかを確認
+        for internal_var, interface_var in self._precheck_data.items():
+            if not hasattr(self, internal_var):
+                raise AttributeError(
+                    f"必要なデータ:{interface_var}が存在しません。"\
+                    "値を代入してください")
+        #array sizeが正しい否かを確認
+        n = len(self.x) #状態変数の要素数
+        m = len(self.h(np.ones(n)))
+        _, v = self.b.shape
+        if not self.b.shape == (n, v):
+            raise
+        if not self.q.shape == (v, v):
+            raise
+        if not self.r.shape == (m, m):
+            raise
+        if not self.x.shape == (n, 1):
+            raise
+        if not self.p.shape == (n, n):
+            raise
+        self.is_updated = False
+    def __init__(self) -> None:
+        self.k = 0
+    def update(self, observed_value: SCALAR, 
+               input_vector: Any = None) -> None:
+        if self.is_updated:
+            self._validate_var_error()
+        result = ukf_update_multiple(
+            x = self.x,
+            p = self.p,
+            f = self.f,
+            h = self.h,
+            b = self.b,
+            q = self.q,
+            r = self.r,
+            k = self.k,
+            y = observed_value,
+            u = input_vector)  
+        self.p = result.p
+        self.x = result.x
+        self.g = result.g
+        self.is_updated = False
+
 
