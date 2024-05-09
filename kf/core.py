@@ -711,4 +711,3 @@ class UnscentedKalmanFilter_MultipleObservation(object):
         self.g = result.g
         self.is_updated = False
 
-
