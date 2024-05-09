@@ -333,6 +333,7 @@ class KalmanFilter_MultipleObservation(object):
                input_vector: ARRAY_I|None = None) -> None:
         if self.is_updated:
             self._validate_var_error()
+        observed_vector_reshaped = np.reshape(observed_vector, (-1, 1))
         n = len(self.x)
         if input_vector == None:
             input_vector = np.zeros((n, 1))
@@ -350,7 +351,7 @@ class KalmanFilter_MultipleObservation(object):
             b = self.b, 
             q = self.q, 
             r = self.r, 
-            y = observed_vector, 
+            y = observed_vector_reshaped, 
             u = input_vector)  
         self.p = result.p
         self.x = result.x
@@ -513,10 +514,11 @@ class ExtendedKalmanFilter_MultipleObservation(object):
         if not self.p.shape == (n, n):
             raise
         self.is_updated = False
-    def update(self, observed_value: ARRAY_M, 
+    def update(self, observed_vector: ARRAY_M, 
                input_vector: Any = None) -> None:
         if self.is_updated:
             self._validate_var_error()
+        observed_vector_reshaped = np.reshape(observed_vector, (-1, 1))
         if not (hasattr(self, "df") and isinstance(self.df, Callable)):
             _f = lambda x: self.f(x, input_vector)
             f_jacobian = jacobian(f=_f, x=self.x.reshape(-1), dx=self.dx,)
@@ -536,7 +538,7 @@ class ExtendedKalmanFilter_MultipleObservation(object):
             b = self.b,
             q = self.q,
             r = self.r,
-            y = observed_value,
+            y = observed_vector_reshaped,
             u = input_vector,)  
         self.p = result.p
         self.x = result.x
@@ -688,10 +690,11 @@ class UnscentedKalmanFilter_MultipleObservation(object):
         self.is_updated = False
     def __init__(self) -> None:
         self.k = 0
-    def update(self, observed_value: ARRAY_M, 
+    def update(self, observed_vector: ARRAY_M, 
                input_vector: Any = None) -> None:
         if self.is_updated:
             self._validate_var_error()
+        observed_vector_reshaped = np.reshape(observed_vector, (-1, 1))
         result = ukf_update_multiple(
             x = self.x,
             p = self.p,
@@ -701,7 +704,7 @@ class UnscentedKalmanFilter_MultipleObservation(object):
             q = self.q,
             r = self.r,
             k = self.k,
-            y = observed_value,
+            y = observed_vector_reshaped,
             u = input_vector)  
         self.p = result.p
         self.x = result.x
