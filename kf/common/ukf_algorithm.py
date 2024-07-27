@@ -100,7 +100,7 @@ def update_multiple(
     p_xy                    = weight*(sigma_point_again-x_)@(sigma_point_observation-y_).T #シグマポイントと観測値の共分散行列の計算 size:(n, m)
 
     #カルマンゲイン
-    g                       = p_xy@np.linalg.solve(p_yy+r, np.eye(m)) #カルマンゲインの計算！！
+    g                       = np.linalg.solve((p_yy+r).T, p_xy.T).T #カルマンゲインの計算！！
 
     #フィルタリングステップ
     x_new                   = x_ + g@(y - y_) #修正

@@ -71,7 +71,7 @@ def update_multiple(
     p_    = a@p@a.T+b@q@b.T
     
     #カルマンゲインを計算
-    g     = p_@c.T@np.linalg.solve(c@p_@c.T+r, np.eye(r.shape[0]))
+    g     = np.linalg.solve((c@p_@c.T+r).T, (p_@c.T).T).T
     
     #修正ステップ（フィルタリング）
     x_new = x_+g@(y-c@x_)
