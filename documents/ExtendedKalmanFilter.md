@@ -10,14 +10,14 @@ import kfilter as kf
 
 ## 想定システム
 
-$$
+```math
 \begin{align}
 x_{k} &= f(x_{k-1}) + Bv_{k} \\
 y_{k} &= h(x_{k}) + w_{k}\\
 \end{align}
-$$
+```
 ただし各種パラメータを以下とする
-$$
+```math
 \begin{align}
 k &= 1, 2, 3, \dots\\
 f &: \mathbb{R}^n \longrightarrow \mathbb{R}^n \\
@@ -30,13 +30,13 @@ w_k &\in \mathbb{R}^r\\
 \mathrm E[v_k] &= 0 \\
 \mathrm E[w_k] &= 0 \\
 \end{align}
-$$
+```
 
-上記は離散状態方程式である．$x_k$は時刻$k$での状態変数，$y_k$は時刻$k$での観測値である．また$f$，$h$はそれぞれ遷移関数と観測関数であり，$x_k$周りで微分可能とする．$B$はシステム雑音行列である．$v_k$，$w_k$はシステム雑音と観測雑音と呼ばれ，平均は共に$0$とする．
+上記は離散状態方程式である．$`x_k`$は時刻$`k`$での状態変数，$`y_k`$は時刻$`k`$での観測値である．また$`f`$，$`h`$はそれぞれ遷移関数と観測関数であり，$`x_k`$周りで微分可能とする．$`B`$はシステム雑音行列である．$`v_k`$，$`w_k`$はシステム雑音と観測雑音と呼ばれ，平均は共に$`0`$とする．
 
 ## 推定アルゴリズム
 
-$$
+```math
 \begin{align}
 \hat x^-_{k} &= f(\hat x_{k-1}) \\
 A_{k-1} &= \left.\frac{\partial f(x)}{\partial x}\right|_{x= \hat x_{k-1}}\\
@@ -46,7 +46,7 @@ G_k &= P^-_{k}C^-{}^\mathsf{T} (C^-P^-_{k}C^-{}^\mathsf{T}+\Sigma_{\mathrm w})^{
 \hat x_{k} &= \hat x^-_{k} + G_k(y_k-h(\hat x^-_{k})) \\
 P_k &= (I-G_kC^-)P^-_k
 \end{align}
-$$
+```
 
 説明はまた後で
 
