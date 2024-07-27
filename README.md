@@ -21,9 +21,9 @@ pythonでKalmanFilterを簡易的に扱うためのモジュールです
 
 ## 使い方
 
-- [KalmanFilter](../kalman-filter/documents/KalmanFilter.md)
-- [ExtendedKalmanFilter](../kalman-filter/documents/ExtendedKalmanFilter.md)
-- [UnscentedKalmanFilter](../kalman-filter/documents/UnscentedKalmanFilter.md)
+- [KalmanFilter](/documents/KalmanFilter.md)
+- [ExtendedKalmanFilter](/documents/ExtendedKalmanFilter.md)
+- [UnscentedKalmanFilter](/documents/UnscentedKalmanFilter.md)
 
 実装フィルタクラス
 - KalmanFilter_SingleObservation
