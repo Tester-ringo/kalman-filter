@@ -3,7 +3,7 @@
 いくつかのフィルタを提供します
 """
 
-from kf.core import *
+from kfilter.core import *
 
 __all__ = [
     "KalmanFilter_SingleObservation",

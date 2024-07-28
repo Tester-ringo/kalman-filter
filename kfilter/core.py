@@ -15,15 +15,15 @@ from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, TypeVar, Annotated, Self
 from dataclasses import dataclass
 from collections import namedtuple, abc
-from kf.dtypes import *
+from kfilter.dtypes import *
 
-from kf.common.kf_algorithm import update_single as kf_update_single
-from kf.common.kf_algorithm import update_multiple as kf_update_multiple
-from kf.common.ekf_algorithm import update_single as ekf_update_single
-from kf.common.ekf_algorithm import update_multiple as ekf_update_multiple
-from kf.common.ukf_algorithm import update_single as ukf_update_single
-from kf.common.ukf_algorithm import update_multiple as ukf_update_multiple
-from kf.common.ekf_algorithm import jacobian
+from kfilter.common.kf_algorithm import update_single as kf_update_single
+from kfilter.common.kf_algorithm import update_multiple as kf_update_multiple
+from kfilter.common.ekf_algorithm import update_single as ekf_update_single
+from kfilter.common.ekf_algorithm import update_multiple as ekf_update_multiple
+from kfilter.common.ukf_algorithm import update_single as ukf_update_single
+from kfilter.common.ukf_algorithm import update_multiple as ukf_update_multiple
+from kfilter.common.ekf_algorithm import jacobian
 
 
 __all__ = [
