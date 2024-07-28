@@ -27,8 +27,6 @@ x_k &\in \mathbb{R}^n\\
 y_k &\in \mathbb{R}^m\\
 v_k &\in \mathbb{R}^r\\
 w_k &\in \mathbb{R}^r\\
-\mathrm E[v_k] &= 0 \\
-\mathrm E[w_k] &= 0 \\
 \end{align}
 ```
 
