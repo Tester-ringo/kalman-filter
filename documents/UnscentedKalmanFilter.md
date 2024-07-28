@@ -43,7 +43,7 @@ w_k &\in \mathbb{R}^m\\
 \mathrm{w}_i &= \frac{\kappa}{2(n+\kappa)},\;\;i=1,2,\dots,2n \\
 \mathrm x^-_i,{}_{k} &= f(\mathrm x_i,{}_{k-1}),\;\;i=1,2,\dots,2n\\
 \hat x^-_k &= \sum^{2n}_{i=0}\mathrm{w}_i\mathrm x^-_i,{}_{k} \\
-P^-_k &= B\Sigma_{\mathrm v} B^\mathsf{T} + \sum^{2n}_{i=0}\mathrm{w}_i(\mathrm x^-_i,{}_{k} - \hat x^-_k)(\mathrm x^-_i,{}_{k} - \hat x^-_k)^\mathsf{T} \\
+P^-_k &= \sum^{2n}_{i=0}\mathrm{w}_i(\mathrm x^-_i,{}_{k} - \hat x^-_k)(\mathrm x^-_i,{}_{k} - \hat x^-_k)^\mathsf{T} + B\Sigma_{\mathrm v} B^\mathsf{T} \\
 \mathrm x_0,{}_{k} &= \hat x^-_{k} \\
 \mathrm x_i,{}_{k} &= \hat x^-_{k} + \sqrt{n+\kappa}(\sqrt{P^-_{k}})_i,\;\;i=1,2,\dots,n\\
 \mathrm x_{n+i},{}_{k} &= \hat x^-_{k} - \sqrt{n+\kappa}(\sqrt{P^-_{k}})_i,\;\;i=1,2,\dots,n\\
