@@ -38,11 +38,11 @@ w_k &\in \mathbb{R}^r\\
 \begin{align}
 \hat x^-_{k} &= f(\hat x_{k-1}) \\
 A_{k-1} &= \left.\frac{\partial f(x)}{\partial x}\right|_{x= \hat x_{k-1}}\\
-C^- &= \left.\frac{\partial h(x)}{\partial x}\right|_{x= \hat x^-_k}\\
+C^-_k &= \left.\frac{\partial h(x)}{\partial x}\right|_{x= \hat x^-_k}\\
 P^-_{k} &= A_{k-1}P^-_{k-1}A_{k-1}^\mathsf{T} + B\Sigma_{\mathrm v} B^\mathsf{T} \\
-G_k &= P^-_{k}C^-{}^\mathsf{T} (C^-P^-_{k}C^-{}^\mathsf{T}+\Sigma_{\mathrm w})^{-1} \\
+G_k &= P^-_{k}C^-_k{}^\mathsf{T} (C^-_kP^-_{k}C^-_k{}^\mathsf{T}+\Sigma_{\mathrm w})^{-1} \\
 \hat x_{k} &= \hat x^-_{k} + G_k(y_k-h(\hat x^-_{k})) \\
-P_k &= (I-G_kC^-)P^-_k
+P_k &= (I-G_kC^-_k)P^-_k
 \end{align}
 ```
 

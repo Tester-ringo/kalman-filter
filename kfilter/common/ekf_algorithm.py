@@ -41,9 +41,9 @@ def update_single(
         x: ARRAY_N_1, 
         p: ARRAY_N_N, 
         f: FUNC_VECTOR_N_I_TO_N, 
-        df: ARRAY_N_N,
+        f_jacobian: ARRAY_N_N,
         h: FUNC_VECTOR_N_TO_M, 
-        dh: ARRAY_M_N,
+        h_jacobian: ARRAY_M_N,
         b: ARRAY_N_1,
         q: SCALAR, 
         r: SCALAR, 
@@ -53,14 +53,14 @@ def update_single(
     """更新"""
     #予測
     x_    = f(x.reshape(-1), u).reshape(-1, 1)
-    p_    = df@p@df.T+q*b@b.T
+    p_    = f_jacobian@p@f_jacobian.T+q*b@b.T
 
     #カルマンゲイン
-    g     = (p_@dh.T)/(dh@p_@dh.T+r)
+    g     = (p_@h_jacobian.T)/(h_jacobian@p_@h_jacobian.T+r)
 
     #修正（フィルタリング）
-    x_new = x_+g@(y-dh@x_)
-    p_new = (np.eye(len(x))-g@dh)@p_
+    x_new = x_+g@(y-h(x_))
+    p_new = (np.eye(len(x))-g@h_jacobian)@p_
 
     return Result_Single(x_new, p_new, g)
 
@@ -69,9 +69,9 @@ def update_multiple(
         x: ARRAY_N_1, 
         p: ARRAY_N_N, 
         f: FUNC_VECTOR_N_I_TO_N, 
-        df: ARRAY_N_N,
+        f_jacobian: ARRAY_N_N,
         h: FUNC_VECTOR_N_TO_M, 
-        dh: ARRAY_M_N,
+        h_jacobian: ARRAY_M_N,
         b: ARRAY_N_V,
         q: ARRAY_V_V, 
         r: ARRAY_M_M, 
@@ -81,13 +81,13 @@ def update_multiple(
     """更新"""
     #予測
     x_    = f(x.reshape(-1), u).reshape(-1, 1)
-    p_    = df@p@df.T+b@q@b.T
+    p_    = f_jacobian@p@f_jacobian.T+b@q@b.T
     
     #カルマンゲインを計算
-    g     = np.linalg.solve((dh@p_@dh.T+r).T, (p_@dh.T).T).T
+    g     = np.linalg.solve((h_jacobian@p_@h_jacobian.T+r).T, (p_@h_jacobian.T).T).T
     
     #修正ステップ（フィルタリング）
-    x_new = x_+g@(y-dh@x_)
-    p_new = (np.eye(len(x))-g@dh)@p_
+    x_new = x_+g@(y-h(x_))
+    p_new = (np.eye(len(x))-g@h_jacobian)@p_
     
     return Result_Multiple(x_new, p_new, g)
