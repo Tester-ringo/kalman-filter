@@ -1,11 +1,9 @@
+#!/usr/bin/python
+"""
+kfilter.core.
 
-#
-# ディスクリプタによる実装
-#
+各フィルタのインターフェース群
 
-"""カルマンフィルタ
-
-手軽にカルマンフィルタを扱うことが目的
 """
 
 import math
@@ -26,7 +24,6 @@ from kfilter.common.ukf_algorithm import update_single as ukf_update_single
 from kfilter.common.ukf_algorithm import update_multiple as ukf_update_multiple
 from kfilter.common.ekf_algorithm import jacobian
 
-
 __all__ = [
     "KalmanFilter_SingleObservation",
     "KalmanFilter_MultipleObservation",
@@ -35,6 +32,7 @@ __all__ = [
     "UnscentedKalmanFilter_SingleObservation",
     "UnscentedKalmanFilter_MultipleObservation",
 ]
+
 
 class FlaggedAttributeDescriptor(object):
     def __set_name__(self, owner, name: str) -> None:
@@ -712,3 +710,5 @@ class UnscentedKalmanFilter_MultipleObservation(object):
         self.g = result.g
         self.is_updated = False
 
+if __name__ == "__main__":
+    pass

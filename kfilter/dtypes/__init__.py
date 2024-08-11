@@ -1,5 +1,9 @@
+#!/usr/bin/python
+"""
+doc
+"""
 
-from .main import *
+from .dtypes import *
 
 __all__ = [
     "SCALAR",

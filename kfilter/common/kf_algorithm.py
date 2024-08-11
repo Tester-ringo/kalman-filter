@@ -1,6 +1,9 @@
-
+#!/usr/bin/python
 """
-KFの裏処理
+KalmanFilterの主要処理
+
+関数として利用できる
+
 """
 
 import math

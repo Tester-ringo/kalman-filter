@@ -1,6 +1,9 @@
-
+#!/usr/bin/python
 """
-PFの裏処理
+Particleの主要処理
+
+関数として利用できる
+
 """
 
 import math

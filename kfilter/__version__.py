@@ -1,5 +1,8 @@
+#!/usr/bin/python
+"""
+version.
 
-#version
+"""
 
 version = (1, 1)
 

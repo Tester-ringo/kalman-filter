@@ -1,6 +1,9 @@
-
+#!/usr/bin/python
 """
-EKFの裏処理
+ExtendedKalmanFilterの主要処理
+
+関数として利用できる
+
 """
 
 import math

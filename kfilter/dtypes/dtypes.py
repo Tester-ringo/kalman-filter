@@ -1,6 +1,10 @@
-
+#!/usr/bin/python
 """
-型置き場。何かが違う気がする。
+dtypes.
+
+扱う行列のサイズを明示することが目的
+しかし何かが違う気がする
+
 """
 
 from dataclasses import dataclass
@@ -17,13 +21,13 @@ I = TypeVar("I") #入力ベクトルの次元数
 
 @dataclass(frozen=True)
 class MatrixSize:
-    row : int
-    column : int
+    row : int|TypeVar
+    column : int|TypeVar
 
 
 @dataclass(frozen=True)
 class VectorSize:
-    row : int
+    row : int|TypeVar
 
 
 DType = TypeVar("DType", bound=np.number)

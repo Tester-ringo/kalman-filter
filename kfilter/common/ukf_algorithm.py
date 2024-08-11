@@ -1,6 +1,9 @@
-
+#!/usr/bin/python
 """
-UKFの裏処理
+UnscentedKalmanFilterの主要処理
+
+関数として利用できる
+
 """
 
 import math
