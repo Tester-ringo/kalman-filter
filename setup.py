@@ -1,8 +1,8 @@
 from setuptools import setup
 
 setup(
-    name="kf",
-    version="1.0",
-    description="カルマンフィルタのテスト実装",
+    name="kfilter",
+    version="1.1",
+    description="カルマンフィルタを簡易的に扱うためのフレームワーク",
     install_requires=open("requirements.txt").read().splitlines(),
 )
