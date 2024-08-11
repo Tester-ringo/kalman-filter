@@ -196,7 +196,7 @@ class KalmanFilter_SingleObservation(object):
         types=np.ndarray, storage_attribute_name="f")
     observation_matrix = ArrayReshapeSwapDescriptor(
         input_size=(1, -1), output_size=(-1,), storage_attribute_name="h")
-    noise_model_matrix = ArrayReshapeSwapDescriptor(
+    noise_coefficient_matrix = ArrayReshapeSwapDescriptor(
         input_size=(-1, 1), output_size=(-1,), storage_attribute_name="b")
     system_noise_covariance_number = TypeCheckSwapDescriptor(
         types=(int, float, complex), storage_attribute_name="q")
@@ -210,7 +210,7 @@ class KalmanFilter_SingleObservation(object):
     _precheck_data: dict = {
         "f": "transition_matrix",
         "h": "observation_matrix",
-        "b": "noise_model_matrix",
+        "b": "noise_coefficient_matrix",
         "q": "system_noise_covariance_number",
         "r": "observation_covariance_number",
         "x": "prediction_state_vector",
@@ -282,7 +282,7 @@ class KalmanFilter_MultipleObservation(object):
         types=np.ndarray, storage_attribute_name="f")
     observation_matrix = TypeCheckSwapDescriptor(
         types=np.ndarray, storage_attribute_name="h")
-    noise_model_matrix = TypeCheckSwapDescriptor(
+    noise_coefficient_matrix = TypeCheckSwapDescriptor(
         types=np.ndarray, storage_attribute_name="b")
     system_noise_covariance_matrix = TypeCheckSwapDescriptor(
         types=np.ndarray, storage_attribute_name="q")
@@ -296,7 +296,7 @@ class KalmanFilter_MultipleObservation(object):
     _precheck_data: dict = {
         "f": "transition_matrix",
         "h": "observation_matrix",
-        "b": "noise_model_matrix",
+        "b": "noise_coefficient_matrix",
         "q": "system_noise_covariance_matrix",
         "r": "observation_covariance_matrix",
         "x": "prediction_state_vector",
@@ -381,7 +381,7 @@ class ExtendedKalmanFilter_SingleObservation(object):
         types=(Callable,), storage_attribute_name="h")
     observation_jacobian = TypeCheckSwapDescriptor(
         types=np.ndarray, storage_attribute_name="dh")
-    noise_model_matrix = ArrayReshapeSwapDescriptor(
+    noise_coefficient_matrix = ArrayReshapeSwapDescriptor(
         input_size=(-1, 1), output_size=(-1,), storage_attribute_name="b")
     system_noise_covariance_number = TypeCheckSwapDescriptor(
         types=(int, float, complex), storage_attribute_name="q")
@@ -395,7 +395,7 @@ class ExtendedKalmanFilter_SingleObservation(object):
     _precheck_data: dict = {
         "f": "transition_function",
         "h": "observation_function",
-        "b": "noise_model_matrix",
+        "b": "noise_coefficient_matrix",
         "q": "system_noise_covariance_number",
         "r": "observation_covariance_number",
         "x": "prediction_state_vector",
@@ -471,7 +471,7 @@ class ExtendedKalmanFilter_MultipleObservation(object):
         types=(Callable,), storage_attribute_name="h")
     observation_jacobian = TypeCheckSwapDescriptor(
         types=np.ndarray, storage_attribute_name="dh")
-    noise_model_matrix = TypeCheckSwapDescriptor(
+    noise_coefficient_matrix = TypeCheckSwapDescriptor(
         types=np.ndarray, storage_attribute_name="b")
     system_noise_covariance_matrix = TypeCheckSwapDescriptor(
         types=np.ndarray, storage_attribute_name="q")
@@ -485,7 +485,7 @@ class ExtendedKalmanFilter_MultipleObservation(object):
     _precheck_data: dict = {
         "f": "transition_function",
         "h": "observation_function",
-        "b": "noise_model_matrix",
+        "b": "noise_coefficient_matrix",
         "q": "system_noise_covariance_matrix",
         "r": "observation_covariance_matrix",
         "x": "prediction_state_vector",
@@ -562,7 +562,7 @@ class UnscentedKalmanFilter_SingleObservation(object):
         types=(Callable,), storage_attribute_name="f")
     observation_function = TypeCheckSwapDescriptor(
         types=(Callable,), storage_attribute_name="h")
-    noise_model_matrix = ArrayReshapeSwapDescriptor(
+    noise_coefficient_matrix = ArrayReshapeSwapDescriptor(
         input_size=(-1, 1), output_size=(-1,), storage_attribute_name="b")
     system_noise_covariance_number = TypeCheckSwapDescriptor(
         types=(int, float, complex), storage_attribute_name="q")
@@ -578,7 +578,7 @@ class UnscentedKalmanFilter_SingleObservation(object):
     _precheck_data: dict = {
         "f": "transition_function",
         "h": "observation_function",
-        "b": "noise_model_matrix",
+        "b": "noise_coefficient_matrix",
         "q": "system_noise_covariance_number",
         "r": "observation_covariance_number",
         "k": "scaling_number",
@@ -642,7 +642,7 @@ class UnscentedKalmanFilter_MultipleObservation(object):
         types=(Callable,), storage_attribute_name="f")
     observation_function = TypeCheckSwapDescriptor(
         types=(Callable,), storage_attribute_name="h")
-    noise_model_matrix = TypeCheckSwapDescriptor(
+    noise_coefficient_matrix = TypeCheckSwapDescriptor(
         types=np.ndarray, storage_attribute_name="b")
     system_noise_covariance_matrix = TypeCheckSwapDescriptor(
         types=np.ndarray, storage_attribute_name="q")
@@ -658,7 +658,7 @@ class UnscentedKalmanFilter_MultipleObservation(object):
     _precheck_data: dict = {
         "f": "transition_function",
         "h": "observation_function",
-        "b": "noise_model_matrix",
+        "b": "noise_coefficient_matrix",
         "q": "system_noise_covariance_matrix",
         "r": "observation_covariance_matrix",
         "k": "scaling_number",
