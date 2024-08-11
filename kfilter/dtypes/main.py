@@ -3,10 +3,11 @@
 型置き場。何かが違う気がする。
 """
 
+from dataclasses import dataclass
+from typing import Any, Callable, TypeVar, Annotated, Union
+
 import numpy as np
 import numpy.typing as npt
-from typing import Any, Callable, TypeVar, Annotated, Union
-from dataclasses import dataclass
 
 N = TypeVar("N") #状態ベクトルの次元数
 M = TypeVar("M") #観測ベクトルの次元数

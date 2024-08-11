@@ -4,10 +4,12 @@ EKFの裏処理
 """
 
 import math
+from dataclasses import dataclass
+from typing import Any, Callable, TypeVar, Annotated, NamedTuple
+
 import numpy as np
 import numpy.typing as npt
-from typing import Any, Callable, TypeVar, Annotated, NamedTuple
-from dataclasses import dataclass
+
 from kfilter.dtypes import *
 
 __all__ = [

@@ -9,14 +9,15 @@
 """
 
 import math
+from abc import ABCMeta, abstractmethod
+from collections import namedtuple, abc
+from dataclasses import dataclass
+from typing import Any, Callable, TypeVar, Annotated, Self
+
 import numpy as np
 import numpy.typing as npt
-from abc import ABCMeta, abstractmethod
-from typing import Any, Callable, TypeVar, Annotated, Self
-from dataclasses import dataclass
-from collections import namedtuple, abc
-from kfilter.dtypes import *
 
+from kfilter.dtypes import *
 from kfilter.common.kf_algorithm import update_single as kf_update_single
 from kfilter.common.kf_algorithm import update_multiple as kf_update_multiple
 from kfilter.common.ekf_algorithm import update_single as ekf_update_single
