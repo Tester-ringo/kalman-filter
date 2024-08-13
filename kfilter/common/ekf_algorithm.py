@@ -92,7 +92,7 @@ def update_multiple(
     g     = np.linalg.solve((h_jacobian@p_@h_jacobian.T+r).T, (p_@h_jacobian.T).T).T
     
     #修正ステップ（フィルタリング）
-    x_new = x_+g@(y-h(x_))
+    x_new = x_+g@(y-h(x_).reshape(-1, 1))
     p_new = (np.eye(len(x))-g@h_jacobian)@p_
     
     return Result_Multiple(x_new, p_new, g)
