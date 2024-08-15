@@ -21,7 +21,7 @@ y_{k} &= h(x_{k}) + w_{k}\\
 \begin{align}
 k &= 1, 2, 3, \dots\\
 f &: \mathbb{R}^n \longrightarrow \mathbb{R}^n \\
-h &: \mathbb{R}^n \longrightarrow \mathbb{R}^n \\
+h &: \mathbb{R}^n \longrightarrow \mathbb{R}^m \\
 B &\in \mathbb{R}^{n\times r} \\
 x_k &\in \mathbb{R}^n\\
 y_k &\in \mathbb{R}^m\\
